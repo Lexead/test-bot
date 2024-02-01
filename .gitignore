@@ -25,3 +25,4 @@ dev/
 *env
 
 *.sqlite3
+.pylintrc
