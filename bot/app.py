@@ -1,4 +1,5 @@
 import asyncio
+from pathlib import Path
 
 from aiogram import Bot, Dispatcher, F, enums
 from aiogram.fsm.storage.redis import RedisStorage
@@ -10,7 +11,8 @@ from sqlalchemy.ext.asyncio import async_sessionmaker, create_async_engine
 async def endpoint():
     """Endpoint for app"""
 
-    settings = Settings()
+    ROOT_DIR = Path(__file__).absolute().parent.parent
+    settings = Settings(_env_file=ROOT_DIR.joinpath(".env"))
 
     engine = create_async_engine(url=settings.pg_dsn, echo=True)
     sessionmaker = async_sessionmaker(engine, expire_on_commit=False, autoflush=False)

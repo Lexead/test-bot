@@ -1,11 +1,8 @@
 .idea/
 .vscode/
-
 __pycache__/
 *.py[cod]
-
 *.mo
-
 env/
 build/
 _build/
@@ -19,10 +16,10 @@ site/
 .pytest_cache
 .coverage
 reports
-
 dev/
 *venv/
 *env
-
 *.sqlite3
 .pylintrc
+migrations/
+poetry.lock

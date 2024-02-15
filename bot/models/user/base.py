@@ -16,12 +16,8 @@ class BaseUser(Base, TimestampMixin):
 
     @property
     def full_name(self) -> str:
-        if self.last_name:
-            return f"{self.first_name} {self.last_name}"
-        return self.first_name
+        return f"{self.first_name} {self.last_name}" if self.last_name else self.first_name
 
     @property
     def pretty(self) -> str:
-        if self.username:
-            return f"{self.full_name} @{self.username}"
-        return self.full_name
+        return f"{self.full_name} @{self.username}" if self.username else self.full_name
