@@ -1,8 +1,11 @@
+from dataclasses import dataclass
 from datetime import datetime
 
 from dateutil import relativedelta, tz
-from sqlalchemy import DateTime, func
-from sqlalchemy.orm import Mapped, mapped_column
+from sqlalchemy import DateTime, ForeignKey, func
+from sqlalchemy.orm import Mapped, mapped_column, relationship
+
+from ..geo import Locale
 
 
 class TimestampMixin:
@@ -10,10 +13,12 @@ class TimestampMixin:
     updated_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now(), onupdate=func.now(), init=False
     )
+    locale_id: Mapped[int] = mapped_column(ForeignKey("locale.id", ondelete="cascade"))
+    locale: Mapped[Locale] = relationship("Locale")
 
-    def __pretty(self, left_dt: datetime, right_dt: datetime, tz_name: str) -> str:
+    def __date_diff(self, left: datetime, right: datetime, tz_name: str) -> str:
         tz_obj = tz.gettz(tz_name)
-        date_diff = relativedelta.relativedelta(left_dt.astimezone(tz_obj), right_dt.astimezone(tz_obj))
+        date_diff = relativedelta.relativedelta(left.astimezone(tz_obj), right.astimezone(tz_obj))
 
         if date_diff.years > 0:
             if date_diff.years == 1:
@@ -42,8 +47,8 @@ class TimestampMixin:
 
         return f"{date_diff.seconds} seconds ago"
 
-    def created_pretty(self, tz_name: str) -> str:
-        return self.__pretty(datetime.utcnow(), self.created_at, tz_name)
+    def created_diff(self) -> str:
+        return self.__date_diff(datetime.utcnow(), self.created_at, self.locale.time_zone)
 
-    def updated_pretty(self, tz_name: str) -> str:
-        return self.__pretty(datetime.utcnow(), self.updated_at, tz_name)
+    def updated_diff(self) -> str:
+        return self.__date_diff(datetime.utcnow(), self.updated_at, self.locale.time_zone)
