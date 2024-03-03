@@ -44,9 +44,11 @@ class BaseQueryMixin:
         return result.unique().scalars().all()
 
     @classmethod
-    async def create(cls: type[T], session: AsyncSession, **kwargs) -> None:
+    async def create(cls: type[T], session: AsyncSession, **kwargs) -> T:
         kwargs = {k: v for k, v in kwargs.items() if k in cls.__table__.columns.keys()}
-        session.add(cls(**kwargs))
+        instance = cls(**kwargs)
+        session.add(instance)
+        return instance
 
     @classmethod
     async def delete(cls: type[T], session: AsyncSession, *expr: bool) -> Sequence[T]:
@@ -65,9 +67,9 @@ class BaseQueryMixin:
         return result.unique().scalars().all()
 
     async def update_instance(self: T, session: AsyncSession, **kwargs) -> None:
-        for attr, value in kwargs.items():
-            if hasattr(self, attr):
-                setattr(self, attr, value)
+        for k, v in kwargs.items():
+            if hasattr(self, k):
+                setattr(self, k, v)
         session.add(self)
 
     @classmethod
