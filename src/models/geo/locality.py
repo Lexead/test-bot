@@ -1,5 +1,5 @@
 from sqlalchemy import ForeignKey, String
-from sqlalchemy.orm import Mapped, mapped_column, relationship
+from sqlalchemy.orm import Mapped, mapped_column
 
 from ..base import Base
 from .country import Country
@@ -12,6 +12,3 @@ class Locality(Base):
     time_zone: Mapped[str] = mapped_column(String(50), default="UTC")
     language_id: Mapped[int] = mapped_column(ForeignKey("languages.id", ondelete="cascade"))
     country_id: Mapped[int] = mapped_column(ForeignKey("countries.id", ondelete="cascade"))
-
-    language: Mapped[Language] = relationship("Language")
-    country: Mapped[Country] = relationship("Country")

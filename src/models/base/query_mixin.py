@@ -1,37 +1,37 @@
 from typing import TYPE_CHECKING, Sequence, TypeVar
 
-from sqlalchemy import ColumnElement, asc, delete, desc, func, select, update
+from sqlalchemy import ColumnExpressionArgument, asc, delete, desc, func, select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
 if TYPE_CHECKING:
     from .declarative import Base
 
-T = TypeVar("T", bound="Base")
+ModelT = TypeVar("ModelT", bound="Base")
 
 
 class BaseQueryMixin:
     @classmethod
-    async def all(cls: type[T], session: AsyncSession) -> Sequence[T]:
+    async def all(cls: type[ModelT], session: AsyncSession) -> Sequence[ModelT]:
         query = select(cls)
         result = await session.execute(query)
         return result.unique().scalars().all()
 
     @classmethod
-    async def get(cls: type[T], session: AsyncSession, *expr: bool) -> T | None:
+    async def get(cls: type[ModelT], session: AsyncSession, *expr: bool) -> ModelT | None:
         query = select(cls).where(*expr)
         result = await session.execute(query)
         return result.unique().scalar_one_or_none()
 
     @classmethod
     async def filter(
-        cls: type[T],
+        cls: type[ModelT],
         session: AsyncSession,
-        *expr: bool,
-        order_by: ColumnElement[T] = None,
+        *expr: ColumnExpressionArgument[bool],
+        order_by: ColumnExpressionArgument[ModelT] = None,
         descending: bool = True,
         limit: int | None = None,
         offset: int | None = None,
-    ) -> Sequence[T]:
+    ) -> Sequence[ModelT]:
         query = select(cls).where(*expr)
         if order_by is not None:
             order = desc if descending else asc
@@ -44,36 +44,38 @@ class BaseQueryMixin:
         return result.unique().scalars().all()
 
     @classmethod
-    async def create(cls: type[T], session: AsyncSession, **kwargs) -> T:
+    async def create(cls: type[ModelT], session: AsyncSession, **kwargs) -> ModelT:
         kwargs = {k: v for k, v in kwargs.items() if k in cls.__table__.columns.keys()}
         instance = cls(**kwargs)
         session.add(instance)
+        await session.flush()
         return instance
 
     @classmethod
-    async def delete(cls: type[T], session: AsyncSession, *expr: bool) -> Sequence[T]:
+    async def delete(cls: type[ModelT], session: AsyncSession, *expr: bool) -> Sequence[ModelT]:
         query = delete(cls).where(*expr).returning(cls)
         result = await session.execute(query)
         return result.unique().scalars().all()
 
-    async def delete_instance(self: T, session: AsyncSession) -> None:
+    async def delete_instance(self: ModelT, session: AsyncSession) -> None:
         await session.delete(self)
 
     @classmethod
-    async def update(cls: type[T], session: AsyncSession, *expr: bool, **kwargs) -> Sequence[T]:
+    async def update(cls: type[ModelT], session: AsyncSession, *expr: bool, **kwargs) -> Sequence[ModelT]:
         kwargs = {k: v for k, v in kwargs.items() if k in cls.__table__.columns.keys()}
         query = update(cls).where(*expr).values(**kwargs).returning(cls)
         result = await session.execute(query)
         return result.unique().scalars().all()
 
-    async def update_instance(self: T, session: AsyncSession, **kwargs) -> None:
+    async def update_instance(self: ModelT, session: AsyncSession, **kwargs) -> None:
         for k, v in kwargs.items():
             if hasattr(self, k):
                 setattr(self, k, v)
         session.add(self)
+        await session.flush()
 
     @classmethod
-    async def count(cls: type[T], session: AsyncSession, *expr: bool) -> int:
+    async def count(cls: type[ModelT], session: AsyncSession, *expr: bool) -> int:
         query = select(func.count(cls.id)).where(*expr)
         result = await session.execute(query)
         return result.unique().scalar_one()

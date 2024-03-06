@@ -21,7 +21,7 @@ class ThrottlingMiddleware(BaseMiddleware):
         if check_user is not None:
             if int(check_user.decode()) == 1:
                 await self.storage.redis.set(name=str(user.id), value=0, ex=10)
-                return await event.answer("Мы обнаружили подозрительную активность. Ждите 10 секунд.")
+                return await event.answer("Обнаружена подозрительная активность. Ждите 10 секунд.")
             return
         await self.storage.redis.set(name=str(user.id), value=1, ex=10)
 
